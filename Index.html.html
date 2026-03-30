@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Hybrid Training</title>
+
+<!-- PWA Meta -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Training">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="description" content="12-Week Hybrid Training Plan — Lift + Run + Track">
+
+<!-- PWA Manifest (inline via data URI) -->
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%2212-Week%20Hybrid%20Training%22%2C%22short_name%22%3A%22Training%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230a0a0a%22%2C%22theme_color%22%3A%22%230a0a0a%22%2C%22orientation%22%3A%22portrait%22%7D">
+
+<!-- Apple Touch Icons (inline SVG → base64 PNG via canvas, injected by JS below) -->
+<link rel="apple-touch-icon" id="apple-icon" href="">
+
+<script>
+// Generate the app icon as a canvas PNG and inject it
+(function(){
+  const size = 512;
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const ctx = c.getContext('2d');
+
+  // Background
+  ctx.fillStyle = '#0a0a0a';
+  ctx.beginPath();
+  ctx.roundRect(0, 0, size, size, size * 0.22);
+  ctx.fill();
+
+  // Accent border arc top-left
+  ctx.strokeStyle = '#e8ff3a';
+  ctx.lineWidth = size * 0.025;
+  ctx.beginPath();
+  ctx.arc(size/2, size/2, size * 0.38, -Math.PI * 0.75, Math.PI * 0.25);
+  ctx.stroke();
+
+  // Second arc (run color)
+  ctx.strokeStyle = '#3ae8ff';
+  ctx.lineWidth = size * 0.018;
+  ctx.beginPath();
+  ctx.arc(size/2, size/2, size * 0.38, Math.PI * 0.3, Math.PI * 1.2);
+  ctx.stroke();
+
+  // Lightning bolt dumbbell hybrid icon
+  // Draw a stylized "H" / power symbol in center
+  ctx.fillStyle = '#e8ff3a';
+
+  // Left vertical bar
+  ctx.fillRect(size*0.28, size*0.28, size*0.09, size*0.44);
+  // Right vertical bar
+  ctx.fillRect(size*0.63, size*0.28, size*0.09, size*0.44);
+  // Middle crossbar
+  ctx.fillRect(size*0.28, size*0.455, size*0.44, size*0.09);
+
+  // Left end caps (dumbbell plates)
+  ctx.fillStyle = '#3ae8ff';
+  ctx.fillRect(size*0.20, size*0.30, size*0.08, size*0.40);
+  ctx.fillRect(size*0.72, size*0.30, size*0.08, size*0.40);
+
+  // Small accent dot bottom right
+  ctx.fillStyle = '#ff4d1c';
+  ctx.beginPath();
+  ctx.arc(size*0.74, size*0.74, size*0.045, 0, Math.PI*2);
+  ctx.fill();
+
+  const dataURL = c.toDataURL('image/png');
+  document.getElementById('apple-icon').href = dataURL;
+
+  // Also set favicon
+  const favicon = document.createElement('link');
+  favicon.rel = 'icon';
+  favicon.type = 'image/png';
+  favicon.href = dataURL;
+  document.head.appendChild(favicon);
+})();
+</script>
+
+<style>
+  /* Safe area insets for iPhone notch/home bar */
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .header {
+    padding-top: max(16px, calc(env(safe-area-inset-top) + 10px)) !important;
+  }
+</style>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap');
+
+  :root {
+    --black: #0a0a0a;
+    --dark: #111111;
+    --card: #181818;
+    --border: #2a2a2a;
+    --accent: #e8ff3a;
+    --accent2: #ff4d1c;
+    --muted: #888;
+    --text: #f0f0f0;
+    --run-color: #3ae8ff;
+    --lift-color: #e8ff3a;
+    --rest-color: #555;
+    --done-color: #3aff8a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--black); color: var(--text); font-family: 'Barlow', sans-serif; min-height: 100vh; }
+
+  .header {
+    background: var(--dark);
+    border-bottom: 2px solid var(--accent);
+    padding: 16px 20px 12px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.7rem; font-weight: 900; letter-spacing: 0.04em;
+    color: var(--accent); text-transform: uppercase; line-height: 1;
+  }
+  .header-meta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 6px; }
+  .meta-pill {
+    font-size: 0.68rem; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; padding: 2px 8px; border-radius: 2px;
+    background: #222; color: var(--muted);
+  }
+  .meta-pill span { color: var(--text); }
+
+  /* OVERALL PROGRESS BAR */
+  .overall-progress {
+    background: var(--dark);
+    padding: 10px 20px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .op-row { display: flex; align-items: center; gap: 10px; }
+  .op-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+  .op-track { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .op-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.5s ease; }
+  .op-pct { font-family: 'Barlow Condensed', sans-serif; font-size: 0.85rem; font-weight: 800; color: var(--accent); }
+
+  .nav-section { padding: 14px 20px 0; background: var(--dark); }
+  .phase-tabs { display: flex; gap: 4px; margin-bottom: 10px; }
+  .phase-tab {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 0.8rem; font-weight: 800;
+    letter-spacing: 0.08em; text-transform: uppercase; padding: 6px 12px;
+    border: 1px solid var(--border); background: transparent; color: var(--muted);
+    cursor: pointer; border-radius: 2px; transition: all 0.15s; line-height: 1.2;
+  }
+  .phase-tab.active { background: var(--accent); color: var(--black); border-color: var(--accent); }
+
+  /* phase tab completion dot */
+  .phase-tab .ptdot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--done-color); margin-left: 5px; vertical-align: middle; opacity: 0; }
+  .phase-tab .ptdot.show { opacity: 1; }
+
+  .week-tabs { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 12px; scrollbar-width: none; }
+  .week-tabs::-webkit-scrollbar { display: none; }
+  .week-tab {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 0.78rem; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase; padding: 5px 10px;
+    border: 1px solid var(--border); background: transparent; color: var(--muted);
+    cursor: pointer; border-radius: 2px; white-space: nowrap; transition: all 0.15s;
+    flex-shrink: 0; position: relative;
+  }
+  .week-tab.active { border-color: var(--accent); color: var(--accent); }
+  .week-tab.week-done { border-color: var(--done-color); color: var(--done-color); }
+  .week-tab.week-done.active { background: rgba(58,255,138,0.1); }
+
+  .content { padding: 16px 20px 80px; max-width: 900px; }
+
+  .week-header { margin-bottom: 16px; }
+  .week-title { font-family: 'Barlow Condensed', sans-serif; font-size: 2rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em; line-height: 1; }
+  .week-focus { font-size: 0.82rem; font-weight: 500; color: var(--muted); margin-top: 4px; letter-spacing: 0.05em; text-transform: uppercase; }
+  .week-focus span { color: var(--accent); }
+
+  /* WEEK COMPLETION SUMMARY */
+  .week-summary {
+    background: var(--card); border: 1px solid var(--border); border-radius: 4px;
+    padding: 12px 14px; margin-bottom: 14px;
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  }
+  .ws-track { flex: 1; min-width: 120px; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .ws-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.4s ease; }
+  .ws-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .ws-pct { font-family: 'Barlow Condensed', sans-serif; font-size: 1.1rem; font-weight: 900; color: var(--accent); }
+  .ws-done-badge {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 0.75rem; font-weight: 800;
+    letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 10px; border-radius: 2px;
+    background: rgba(58,255,138,0.15); color: var(--done-color); display: none;
+  }
+
+  .days-grid { display: flex; flex-direction: column; gap: 10px; }
+
+  .day-card { background: var(--card); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+  .day-card.run-day { border-left: 3px solid var(--run-color); }
+  .day-card.lift-day { border-left: 3px solid var(--lift-color); }
+  .day-card.rest-day { border-left: 3px solid var(--rest-color); }
+  .day-card.day-complete { border-left-color: var(--done-color) !important; }
+
+  .day-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 11px 14px; cursor: pointer; user-select: none; gap: 8px;
+  }
+  .day-header:hover { background: #1e1e1e; }
+
+  .day-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+  .day-label { font-family: 'Barlow Condensed', sans-serif; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); width: 28px; flex-shrink: 0; }
+  .day-name { font-family: 'Barlow Condensed', sans-serif; font-size: 1.05rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
+  .day-type-badge { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 7px; border-radius: 2px; flex-shrink: 0; }
+  .run-badge { background: rgba(58,232,255,0.15); color: var(--run-color); }
+  .lift-badge { background: rgba(232,255,58,0.15); color: var(--lift-color); }
+  .rest-badge { background: rgba(85,85,85,0.3); color: var(--rest-color); }
+
+  .day-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+  /* day progress ring / check */
+  .day-progress-wrap { position: relative; width: 28px; height: 28px; flex-shrink: 0; }
+  .day-progress-wrap svg { position: absolute; top: 0; left: 0; transform: rotate(-90deg); }
+  .dp-bg { fill: none; stroke: var(--border); stroke-width: 3; }
+  .dp-fill { fill: none; stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset 0.4s ease; }
+  .dp-check { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 0.75rem; opacity: 0; transition: opacity 0.3s; }
+  .day-progress-wrap.complete .dp-check { opacity: 1; }
+
+  .chevron { color: var(--muted); font-size: 0.9rem; transition: transform 0.2s; }
+  .day-card.open .chevron { transform: rotate(180deg); }
+
+  .day-body { display: none; padding: 0 14px 14px; border-top: 1px solid var(--border); }
+  .day-card.open .day-body { display: block; }
+
+  .phase-label {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 0.65rem; font-weight: 800;
+    letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin: 12px 0 7px;
+  }
+
+  /* EXERCISE TABLE WITH CHECKBOXES */
+  .ex-table { width: 100%; border-collapse: collapse; }
+  .ex-table th {
+    font-size: 0.62rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); text-align: left; padding: 3px 6px 5px; border-bottom: 1px solid var(--border);
+  }
+  .ex-table th:first-child { padding-left: 0; width: 28px; }
+  .ex-table td { padding: 6px 6px; font-size: 0.82rem; border-bottom: 1px solid #1e1e1e; vertical-align: middle; }
+  .ex-table td:first-child { padding-left: 0; }
+  .ex-table tr:last-child td { border-bottom: none; }
+  .ex-table tr.ex-done td { opacity: 0.45; }
+  .ex-table tr.ex-done .ex-name { text-decoration: line-through; }
+
+  .ex-name { font-weight: 600; color: var(--text); }
+  .ex-note { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
+  .ex-sets { color: var(--accent); font-weight: 700; font-family: 'Barlow Condensed', sans-serif; font-size: 0.95rem; }
+  .ex-reps { color: var(--text); font-family: 'Barlow Condensed', sans-serif; font-size: 0.9rem; }
+  .ex-rest { color: var(--muted); font-size: 0.75rem; white-space: nowrap; }
+
+  /* Custom checkbox */
+  .ex-check {
+    width: 20px; height: 20px; border: 1.5px solid var(--border); border-radius: 3px;
+    background: transparent; cursor: pointer; appearance: none; -webkit-appearance: none;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    transition: all 0.15s; position: relative;
+  }
+  .ex-check:checked {
+    background: var(--done-color); border-color: var(--done-color);
+  }
+  .ex-check:checked::after {
+    content: '✓'; position: absolute; color: var(--black);
+    font-size: 0.7rem; font-weight: 900; line-height: 1;
+  }
+  .ex-check:hover:not(:checked) { border-color: var(--accent); }
+
+  /* RUN COMPLETE SECTION */
+  .run-block {
+    background: rgba(58,232,255,0.05); border: 1px solid rgba(58,232,255,0.15);
+    border-radius: 3px; padding: 12px; margin-top: 10px;
+  }
+  .run-block-title { font-family: 'Barlow Condensed', sans-serif; font-size: 0.85rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--run-color); margin-bottom: 6px; }
+  .run-block p { font-size: 0.82rem; color: var(--text); line-height: 1.5; }
+  .run-block .pace-note { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+
+  /* RUN LOG FORM */
+  .run-log {
+    margin-top: 12px; background: #1a1a1a; border: 1px solid var(--border);
+    border-radius: 3px; padding: 12px;
+  }
+  .run-log-title { font-family: 'Barlow Condensed', sans-serif; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  .run-inputs { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+  .run-field { display: flex; flex-direction: column; gap: 4px; }
+  .run-field label { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .run-field input {
+    background: var(--card); border: 1px solid var(--border); border-radius: 2px;
+    color: var(--text); font-family: 'Barlow', sans-serif; font-size: 0.85rem;
+    padding: 6px 10px; width: 100px; outline: none;
+  }
+  .run-field input:focus { border-color: var(--run-color); }
+  .run-field input.saved { border-color: var(--done-color); color: var(--done-color); }
+
+  .mark-done-btn {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 0.78rem; font-weight: 800;
+    letter-spacing: 0.1em; text-transform: uppercase; padding: 7px 16px;
+    border: 1px solid; border-radius: 2px; cursor: pointer; transition: all 0.15s;
+  }
+  .mark-run-done { border-color: var(--run-color); background: transparent; color: var(--run-color); }
+  .mark-run-done:hover { background: rgba(58,232,255,0.1); }
+  .mark-run-done.done { background: rgba(58,255,138,0.1); border-color: var(--done-color); color: var(--done-color); }
+
+  .mark-rest-done { border-color: var(--rest-color); background: transparent; color: var(--muted); margin-top: 12px; }
+  .mark-rest-done:hover { background: rgba(85,85,85,0.2); }
+  .mark-rest-done.done { background: rgba(58,255,138,0.1); border-color: var(--done-color); color: var(--done-color); }
+
+  .rest-content { padding: 10px 0; }
+  .rest-content p { font-size: 0.82rem; color: var(--muted); line-height: 1.6; }
+  .rest-list { margin-top: 8px; display: flex; flex-direction: column; gap: 3px; }
+  .rest-list li { font-size: 0.78rem; color: var(--muted); list-style: none; padding-left: 12px; position: relative; }
+  .rest-list li::before { content: '—'; position: absolute; left: 0; color: var(--border); }
+
+  /* WORKOUT NOTES */
+  .notes-section { margin-top: 14px; }
+  .notes-label { font-family: 'Barlow Condensed', sans-serif; font-size: 0.65rem; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .notes-textarea {
+    width: 100%; background: #1a1a1a; border: 1px solid var(--border);
+    border-radius: 3px; color: var(--text); font-family: 'Barlow', sans-serif;
+    font-size: 0.82rem; padding: 8px 10px; resize: vertical; min-height: 60px;
+    outline: none; line-height: 1.5;
+  }
+  .notes-textarea:focus { border-color: var(--accent); }
+  .notes-textarea::placeholder { color: #444; }
+  .notes-save-btn {
+    margin-top: 6px; font-family: 'Barlow Condensed', sans-serif; font-size: 0.72rem;
+    font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; padding: 5px 14px;
+    border: 1px solid var(--border); background: transparent; color: var(--muted);
+    cursor: pointer; border-radius: 2px; transition: all 0.15s;
+  }
+  .notes-save-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .notes-save-btn.saved { border-color: var(--done-color); color: var(--done-color); }
+
+  /* stats row */
+  .stats-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .stat-box { background: var(--card); border: 1px solid var(--border); border-radius: 3px; padding: 8px 12px; flex: 1; min-width: 70px; }
+  .stat-val { font-family: 'Barlow Condensed', sans-serif; font-size: 1.4rem; font-weight: 900; color: var(--accent); line-height: 1; }
+  .stat-label { font-size: 0.62rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-top: 1px; }
+
+  .phase-banner { background: linear-gradient(135deg, #1a1a0a, #111); border: 1px solid var(--accent); border-radius: 3px; padding: 12px 14px; margin-bottom: 14px; }
+  .phase-banner-title { font-family: 'Barlow Condensed', sans-serif; font-size: 1.3rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); }
+  .phase-banner-desc { font-size: 0.79rem; color: var(--muted); margin-top: 3px; line-height: 1.5; }
+
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .legend-dot { width: 7px; height: 7px; border-radius: 50%; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>12-Week Hybrid Plan</h1>
+  <div class="header-meta">
+    <div class="meta-pill">Age <span>38</span></div>
+    <div class="meta-pill">Weight <span>220 lbs</span></div>
+    <div class="meta-pill">5:30 <span>AM</span></div>
+    <div class="meta-pill">Goal <span>Fat Loss + Muscle + Endurance</span></div>
+  </div>
+</div>
+
+<div class="overall-progress">
+  <div class="op-row">
+    <span class="op-label">12-Week Progress</span>
+    <div class="op-track"><div class="op-fill" id="overallFill" style="width:0%"></div></div>
+    <span class="op-pct" id="overallPct">0%</span>
+  </div>
+</div>
+
+<div class="nav-section">
+  <div class="phase-tabs" id="phaseTabs">
+    <button class="phase-tab active" onclick="selectPhase(1)">Phase 1<br><small style="font-size:0.6rem;font-weight:600">Wks 1–4</small><span class="ptdot" id="ptdot1"></span></button>
+    <button class="phase-tab" onclick="selectPhase(2)">Phase 2<br><small style="font-size:0.6rem;font-weight:600">Wks 5–8</small><span class="ptdot" id="ptdot2"></span></button>
+    <button class="phase-tab" onclick="selectPhase(3)">Phase 3<br><small style="font-size:0.6rem;font-weight:600">Wks 9–12</small><span class="ptdot" id="ptdot3"></span></button>
+  </div>
+  <div class="week-tabs" id="weekTabs"></div>
+</div>
+
+<div class="content" id="mainContent"></div>
+
+<script>
+// ==========================================
+// STORAGE HELPERS
+// ==========================================
+const STORE = {
+  get: async (key) => {
+    try { const r = await window.storage.get(key); return r ? JSON.parse(r.value) : null; }
+    catch { return null; }
+  },
+  set: async (key, val) => {
+    try { await window.storage.set(key, JSON.stringify(val)); } catch {}
+  }
+};
+
+// trackData: { 'w1-d0': { exercises: {exId: bool}, runDone: bool, runKm: '', runTime: '', notes: '', restDone: bool } }
+
+// ==========================================
+// DATA
+// ==========================================
+const phases = {
+  1: { name:"Foundation & Fat Loss", desc:"Re-establish your aerobic base with easy running. Full-body lifting 3x/week with moderate weight and high effort. Priority: consistency, movement quality, and dropping body fat. Don't push pace on runs — you're building the engine.", weeks:[1,2,3,4] },
+  2: { name:"Strength & Threshold", desc:"Split into Upper/Lower lifting to drive more muscle stimulus. Run intensity increases with one threshold or tempo session per week. Volume and load increases across the board. You should be sweating hard most sessions.", weeks:[5,6,7,8] },
+  3: { name:"Power & Peak", desc:"Maximum intensity phase. Explosive lifting, heavier loads, and a weekly interval run. This is where you cash in on everything built in Phases 1 and 2. Final week is a deload — lighter weights, shorter runs.", weeks:[9,10,11,12] }
+};
+
+const warmup_general = [
+  {id:"wu1",name:"Hip Circles",sets:null,reps:"10 each way",rest:null},
+  {id:"wu2",name:"Leg Swings (front/back + lateral)",sets:null,reps:"10 each",rest:null},
+  {id:"wu3",name:"Arm Circles + Band Pull-Aparts",sets:null,reps:"10 each",rest:null},
+  {id:"wu4",name:"Bodyweight Squats",sets:null,reps:"10",rest:null},
+  {id:"wu5",name:"Inchworms",sets:null,reps:"5",rest:null,note:"Walk hands out to push-up position and back"},
+];
+const cooldown_general = [
+  {id:"cd1",name:"90/90 Hip Stretch",sets:null,reps:"60s each side",rest:null},
+  {id:"cd2",name:"Pigeon Pose or Figure-4",sets:null,reps:"60s each side",rest:null},
+  {id:"cd3",name:"Chest Opener on Foam Roller",sets:null,reps:"60s",rest:null},
+  {id:"cd4",name:"Lat Stretch",sets:null,reps:"30s each",rest:null},
+  {id:"cd5",name:"Quad Stretch",sets:null,reps:"30s each",rest:null},
+];
+
+const p1A={name:"Full Body A — Squat Focus",type:"lift",duration:"~55 min",exercises:[
+  {id:"p1a1",name:"Goblet Squat",sets:3,reps:"12",rest:"60s",note:"Chest tall. Add weight each week."},
+  {id:"p1a2",name:"Romanian Deadlift (RDL)",sets:3,reps:"10",rest:"75s",note:"Hinge at hips, feel the hamstring stretch."},
+  {id:"p1a3",name:"Dumbbell Bench Press",sets:3,reps:"12",rest:"60s"},
+  {id:"p1a4",name:"1-Arm Dumbbell Row",sets:3,reps:"12 each",rest:"60s",note:"Brace core, full range."},
+  {id:"p1a5",name:"Dumbbell Shoulder Press",sets:3,reps:"10",rest:"60s"},
+  {id:"p1a6",name:"Plank",sets:3,reps:"30–45s",rest:"30s"},
+  {id:"p1a7",name:"Dead Bug",sets:3,reps:"8 each side",rest:"30s",note:"Slow and controlled."},
+]};
+const p1B={name:"Full Body B — Hinge Focus",type:"lift",duration:"~55 min",exercises:[
+  {id:"p1b1",name:"Trap Bar Deadlift (or Conventional)",sets:3,reps:"8",rest:"90s",note:"Drive floor away. Big breath, brace, pull."},
+  {id:"p1b2",name:"Dumbbell Reverse Lunge",sets:3,reps:"10 each leg",rest:"60s"},
+  {id:"p1b3",name:"Incline Dumbbell Press",sets:3,reps:"12",rest:"60s"},
+  {id:"p1b4",name:"Seated Cable Row",sets:3,reps:"12",rest:"60s"},
+  {id:"p1b5",name:"Lateral Raise",sets:3,reps:"15",rest:"45s",note:"Light weight. Control the descent."},
+  {id:"p1b6",name:"Hanging Knee Raise",sets:3,reps:"12",rest:"45s"},
+  {id:"p1b7",name:"Farmer's Carry",sets:3,reps:"20m each",rest:"60s",note:"Heavy dumbbells, walk tall."},
+]};
+const p1C={name:"Full Body C — Push/Pull Mix",type:"lift",duration:"~55 min",exercises:[
+  {id:"p1c1",name:"Barbell / Dumbbell Hip Thrust",sets:3,reps:"15",rest:"60s",note:"Full extension at top, squeeze glutes."},
+  {id:"p1c2",name:"Step-Ups (weighted)",sets:3,reps:"10 each",rest:"60s"},
+  {id:"p1c3",name:"Push-Ups (weighted or tempo)",sets:3,reps:"AMRAP",rest:"60s",note:"Slow 3s down, 1s up."},
+  {id:"p1c4",name:"Pull-Ups or Lat Pulldown",sets:3,reps:"8–10",rest:"75s",note:"Full hang to chin over bar."},
+  {id:"p1c5",name:"EZ-Bar or Dumbbell Curl",sets:3,reps:"12",rest:"45s"},
+  {id:"p1c6",name:"Tricep Overhead Extension",sets:3,reps:"12",rest:"45s"},
+  {id:"p1c7",name:"Side Plank",sets:3,reps:"30s each",rest:"30s"},
+]};
+
+const p2UA={name:"Upper Body A — Horizontal Push/Pull",type:"lift",duration:"~60 min",exercises:[
+  {id:"p2ua1",name:"Barbell Bench Press",sets:4,reps:"8",rest:"90s",note:"Work up to a challenging weight."},
+  {id:"p2ua2",name:"Pendlay Row (or Barbell Row)",sets:4,reps:"8",rest:"90s",note:"Pause at chest."},
+  {id:"p2ua3",name:"Incline Dumbbell Press",sets:3,reps:"10",rest:"75s"},
+  {id:"p2ua4",name:"1-Arm Row",sets:3,reps:"10 each",rest:"60s"},
+  {id:"p2ua5",name:"Lateral Raise",sets:3,reps:"15",rest:"45s"},
+  {id:"p2ua6",name:"Tricep Pushdown",sets:3,reps:"15",rest:"45s"},
+  {id:"p2ua7",name:"Dumbbell Curl",sets:3,reps:"12",rest:"45s"},
+  {id:"p2ua8",name:"Ab Wheel Rollout",sets:3,reps:"8–10",rest:"45s"},
+]};
+const p2LA={name:"Lower Body A — Quad Dominant",type:"lift",duration:"~60 min",exercises:[
+  {id:"p2la1",name:"Back Squat",sets:4,reps:"6",rest:"2 min",note:"Heavier than Phase 1. Full depth."},
+  {id:"p2la2",name:"Walking Lunges",sets:3,reps:"12 each leg",rest:"75s"},
+  {id:"p2la3",name:"Leg Press",sets:3,reps:"15",rest:"60s"},
+  {id:"p2la4",name:"Leg Curl (or Nordic Curl)",sets:3,reps:"12",rest:"60s"},
+  {id:"p2la5",name:"Calf Raise",sets:4,reps:"20",rest:"30s"},
+  {id:"p2la6",name:"Plank — 3-way",sets:1,reps:"45s front + 30s each side",rest:"30s"},
+]};
+const p2UB={name:"Upper Body B — Vertical Push/Pull",type:"lift",duration:"~60 min",exercises:[
+  {id:"p2ub1",name:"Overhead Press (barbell or DB)",sets:4,reps:"8",rest:"90s",note:"Brace hard. Lock out at top."},
+  {id:"p2ub2",name:"Pull-Ups (weighted if possible)",sets:4,reps:"6–8",rest:"90s"},
+  {id:"p2ub3",name:"Arnold Press",sets:3,reps:"10",rest:"60s"},
+  {id:"p2ub4",name:"Lat Pulldown (wide grip)",sets:3,reps:"12",rest:"60s"},
+  {id:"p2ub5",name:"Face Pulls",sets:3,reps:"15",rest:"45s",note:"External rotation — protect your shoulders."},
+  {id:"p2ub6",name:"EZ-Bar Skull Crusher",sets:3,reps:"12",rest:"45s"},
+  {id:"p2ub7",name:"Hammer Curl",sets:3,reps:"12",rest:"45s"},
+  {id:"p2ub8",name:"Cable Crunch or Weighted Sit-Up",sets:3,reps:"15",rest:"30s"},
+]};
+const p2LB={name:"Lower Body B — Hip Dominant",type:"lift",duration:"~60 min",exercises:[
+  {id:"p2lb1",name:"Conventional Deadlift",sets:4,reps:"5",rest:"2 min",note:"Drive the floor away. Keep bar close."},
+  {id:"p2lb2",name:"Bulgarian Split Squat",sets:3,reps:"8 each",rest:"90s",note:"Slow descent. Front heel grounded."},
+  {id:"p2lb3",name:"Hip Thrust (barbell)",sets:3,reps:"12",rest:"75s"},
+  {id:"p2lb4",name:"Good Morning (light bar)",sets:3,reps:"12",rest:"60s"},
+  {id:"p2lb5",name:"Calf Raise (seated)",sets:4,reps:"20",rest:"30s"},
+  {id:"p2lb6",name:"Hanging Leg Raise",sets:3,reps:"12",rest:"45s"},
+]};
+
+const p3PU={name:"Power Upper — Max Strength",type:"lift",duration:"~65 min",exercises:[
+  {id:"p3pu1",name:"Bench Press — Work to 3RM",sets:5,reps:"3 (heavy)",rest:"2–3 min",note:"Ramp up to your hardest 3 reps."},
+  {id:"p3pu2",name:"Weighted Pull-Ups",sets:4,reps:"5",rest:"2 min"},
+  {id:"p3pu3",name:"Dumbbell Floor Press",sets:3,reps:"10",rest:"75s"},
+  {id:"p3pu4",name:"Chest-Supported Row",sets:3,reps:"10",rest:"75s"},
+  {id:"p3pu5",name:"Band Pull-Apart",sets:3,reps:"20",rest:"30s"},
+  {id:"p3pu6",name:"Dips (weighted)",sets:3,reps:"8",rest:"60s"},
+  {id:"p3pu7",name:"Barbell Curl",sets:3,reps:"10",rest:"45s"},
+  {id:"p3pu8",name:"Pallof Press",sets:3,reps:"12 each",rest:"45s"},
+]};
+const p3PL={name:"Power Lower — Heavy & Explosive",type:"lift",duration:"~65 min",exercises:[
+  {id:"p3pl1",name:"Squat — Work to 3RM",sets:5,reps:"3 (heavy)",rest:"2–3 min",note:"Go heavy. Treat every rep like it matters."},
+  {id:"p3pl2",name:"Trap Bar Jump (or Box Jump)",sets:4,reps:"5",rest:"90s",note:"Explosive concentric. Land soft."},
+  {id:"p3pl3",name:"Romanian Deadlift",sets:3,reps:"10",rest:"75s"},
+  {id:"p3pl4",name:"Single Leg Press",sets:3,reps:"12 each",rest:"60s"},
+  {id:"p3pl5",name:"Calf Raise (standing)",sets:4,reps:"20",rest:"30s"},
+  {id:"p3pl6",name:"Ab Wheel + Plank combo",sets:3,reps:"8 + 30s",rest:"45s"},
+]};
+const p3HU={name:"Hypertrophy Upper — High Volume",type:"lift",duration:"~60 min",exercises:[
+  {id:"p3hu1",name:"Incline Barbell Press",sets:4,reps:"10",rest:"75s"},
+  {id:"p3hu2",name:"Cable Row (close grip)",sets:4,reps:"12",rest:"60s"},
+  {id:"p3hu3",name:"Cable Fly",sets:3,reps:"15",rest:"45s"},
+  {id:"p3hu4",name:"Lat Pulldown (underhand)",sets:3,reps:"12",rest:"60s"},
+  {id:"p3hu5",name:"Lateral Raise",sets:4,reps:"20",rest:"30s",note:"Light. Pump it."},
+  {id:"p3hu6",name:"Overhead Press",sets:3,reps:"10",rest:"60s"},
+  {id:"p3hu7",name:"Superset: Curl + Pushdown",sets:3,reps:"12+12",rest:"60s"},
+]};
+const p3HL={name:"Hypertrophy Lower — High Volume",type:"lift",duration:"~60 min",exercises:[
+  {id:"p3hl1",name:"Hack Squat (or Front Squat)",sets:4,reps:"12",rest:"75s"},
+  {id:"p3hl2",name:"Romanian Deadlift",sets:4,reps:"12",rest:"75s"},
+  {id:"p3hl3",name:"Leg Press",sets:3,reps:"20",rest:"60s",note:"High rep burn set."},
+  {id:"p3hl4",name:"Walking Lunge",sets:3,reps:"15 each",rest:"60s"},
+  {id:"p3hl5",name:"Lying Leg Curl",sets:3,reps:"15",rest:"45s"},
+  {id:"p3hl6",name:"Calf Raise",sets:5,reps:"25",rest:"30s"},
+  {id:"p3hl7",name:"Plank + Dead Bug",sets:3,reps:"45s + 8 each",rest:"30s"},
+]};
+
+function getRun(phase,week,runNum){
+  if(phase===1){
+    const eKm=[3.5,4,4.5,3][week-1],lKm=[5,6,7,5][week-1];
+    if(runNum===1)return{title:"Easy Run",desc:`${eKm} km at a conversational easy pace. If you can't hold a sentence, slow down. Aerobic base building.`,paceNote:"Target: 6:30–7:30/km. RPE 4–5/10."};
+    if(runNum===2)return{title:"Easy Run",desc:`${eKm} km easy. Keep it relaxed. Focus on form: tall posture, relaxed shoulders, 170–180 spm cadence.`,paceNote:"Target: 6:30–7:30/km. RPE 4/10."};
+    if(runNum===3)return{title:`Long Easy Run — ${lKm} km`,desc:`${lKm} km easy. Re-base run. Start very slow. The engine is there — you're just waking it up.`,paceNote:"Target: 6:45–7:30/km. RPE 4–5/10."};
+  }
+  if(phase===2){
+    const w=week-4,tKm=[4,5,5,3.5][w-1],eKm=[5,5,6,4][w-1],lKm=[8,9,10,7][w-1];
+    if(runNum===1)return{title:"Easy Run",desc:`${eKm} km easy pace. Recovery run — you lifted hard yesterday.`,paceNote:"Target: 6:30–7:30/km. RPE 4/10."};
+    if(runNum===2)return{title:"Tempo Run",desc:`5 min easy warm-up → ${tKm} km at comfortably hard pace → 5 min easy cool-down. Can speak in short phrases, not full sentences.`,paceNote:"Tempo: 5:00–5:45/km. RPE 7/10."};
+    if(runNum===3)return{title:`Long Run — ${lKm} km`,desc:`${lKm} km easy/conversational. Aerobic engine builder. Fuel before if over 60 min.`,paceNote:"Target: 6:15–7:00/km. RPE 5/10."};
+  }
+  if(phase===3){
+    const w=week-8,lKm=[10,12,13,8][w-1];
+    if(runNum===1)return{title:"Easy Run",desc:"5 km easy. Active recovery. Keep HR in zone 2.",paceNote:"Target: 6:30–7:15/km. RPE 4/10."};
+    if(runNum===2){
+      if(w===4)return{title:"Easy Run (Deload)",desc:"3 km easy. Deload week — just move.",paceNote:"RPE 3/10."};
+      const iv=[["6 x 800m","3 min walk/jog rest"],["8 x 600m","2 min rest"],["5 x 1000m","3 min rest"]][w-1];
+      return{title:"Interval Run",desc:`10 min easy warm-up → ${iv[0]} at hard effort with ${iv[1]} between each → 5 min cool-down. These should hurt.`,paceNote:"Interval effort: RPE 8–9/10. Push."};
+    }
+    if(runNum===3)return{title:`Long Run — ${lKm} km`,desc:`${lKm} km. First 70% easy, last 30% moderate progression.`,paceNote:"Easy: 6:15–7:00/km → Moderate finish: 5:30–6:00/km."};
+  }
+}
+
+function buildWeek(week){
+  const phase=week<=4?1:week<=8?2:3;
+  let lifts;
+  if(phase===1)lifts=[p1A,p1B,p1C];
+  else if(phase===2){
+    lifts=[p2UA,p2LA,p2UB];
+    if((week-4)%2===0)lifts=[p2UA,p2LB,p2UB];
+  } else {
+    const w=week-8;
+    if(w===4){
+      lifts=[
+        {...p3PU,name:"Deload Upper — Light",exercises:p3PU.exercises.map(e=>({...e,sets:Math.max(2,(e.sets||3)-1),reps:typeof e.reps==='string'&&e.reps.includes('heavy')?'5 (light)':e.reps}))},
+        {...p3PL,name:"Deload Lower — Light",exercises:p3PL.exercises.map(e=>({...e,sets:Math.max(2,(e.sets||3)-1)}))},
+        {...p3HU,name:"Deload — Upper Pump",exercises:p3HU.exercises.map(e=>({...e,sets:2}))},
+      ];
+    } else {
+      lifts=[p3PU,p3PL,w%2===0?p3HU:p3HL];
+    }
+  }
+  return [
+    {day:"MON",name:"Monday",type:"run",badge:"run-badge",badgeText:"Run",cardClass:"run-day",duration:"~30–40 min",runData:getRun(phase,week,1),lift:null,isRest:false},
+    {day:"TUE",name:"Tuesday",type:"lift",badge:"lift-badge",badgeText:"Lift",cardClass:"lift-day",duration:lifts[0].duration,runData:null,lift:lifts[0],isRest:false},
+    {day:"WED",name:"Wednesday",type:"run",badge:"run-badge",badgeText:"Run",cardClass:"run-day",duration:"~35–50 min",runData:getRun(phase,week,2),lift:null,isRest:false},
+    {day:"THU",name:"Thursday",type:"lift",badge:"lift-badge",badgeText:"Lift",cardClass:"lift-day",duration:lifts[1].duration,runData:null,lift:lifts[1],isRest:false},
+    {day:"FRI",name:"Friday",type:"lift",badge:"lift-badge",badgeText:"Lift",cardClass:"lift-day",duration:lifts[2].duration,runData:null,lift:lifts[2],isRest:false},
+    {day:"SAT",name:"Saturday",type:"run",badge:"run-badge",badgeText:"Long Run",cardClass:"run-day",duration:"~45–75 min",runData:getRun(phase,week,3),lift:null,isRest:false},
+    {day:"SUN",name:"Sunday",type:"rest",badge:"rest-badge",badgeText:"Rest",cardClass:"rest-day",duration:"Recovery",runData:null,lift:null,isRest:true},
+  ];
+}
+
+// ==========================================
+// STATE
+// ==========================================
+let currentPhase=1, currentWeek=1;
+// weekData[w][d] = { exercises:{id:bool}, runDone:bool, runKm:'', runTime:'', notes:'', restDone:bool }
+let weekData = {};
+
+function storeKey(w,d){ return `iadome-w${w}-d${d}`; }
+
+async function loadWeekData(week){
+  weekData[week] = weekData[week] || {};
+  for(let d=0;d<7;d++){
+    if(!weekData[week][d]){
+      const saved = await STORE.get(storeKey(week,d));
+      weekData[week][d] = saved || {exercises:{},runDone:false,runKm:'',runTime:'',notes:'',restDone:false};
+    }
+  }
+}
+
+async function saveDay(week,dayIdx){
+  await STORE.set(storeKey(week,dayIdx), weekData[week][dayIdx]);
+}
+
+// ==========================================
+// COMPLETION CALC
+// ==========================================
+function getDayCompletion(week, dayIdx, dayData){
+  const state = (weekData[week]||{})[dayIdx]||{};
+  if(dayData.isRest) return { done: state.restDone||false, pct: state.restDone?100:0 };
+  if(dayData.type==='run') return { done: state.runDone||false, pct: state.runDone?100:0 };
+  // lift: count exercises (main only, not warmup/cooldown)
+  const exs = dayData.lift ? dayData.lift.exercises : [];
+  if(!exs.length) return {done:false,pct:0};
+  const done = exs.filter(e=>state.exercises&&state.exercises[e.id]).length;
+  const pct = Math.round(done/exs.length*100);
+  return {done: pct===100, pct};
+}
+
+function getWeekCompletion(week){
+  const days = buildWeek(week);
+  let total=0, done=0;
+  days.forEach((d,i)=>{
+    const c = getDayCompletion(week,i,d);
+    total+=100; done+=c.pct;
+  });
+  return Math.round(done/total*100);
+}
+
+function getOverallCompletion(){
+  let total=0,done=0;
+  for(let w=1;w<=12;w++){
+    const pct = getWeekCompletion(w);
+    total+=100; done+=pct;
+  }
+  return Math.round(done/total*100);
+}
+
+// ==========================================
+// RENDER
+// ==========================================
+function selectPhase(p){
+  currentPhase=p;
+  currentWeek=phases[p].weeks[0];
+  renderPhaseTabs();
+  renderWeekTabs();
+  renderCurrentWeek();
+}
+
+function selectWeek(w){
+  currentWeek=w;
+  renderWeekTabs();
+  renderCurrentWeek();
+}
+
+function renderPhaseTabs(){
+  document.querySelectorAll('.phase-tab').forEach((t,i)=>{
+    const p=i+1;
+    t.classList.toggle('active',p===currentPhase);
+    const weeks=phases[p].weeks;
+    const allDone=weeks.every(w=>getWeekCompletion(w)===100);
+    const dot=document.getElementById(`ptdot${p}`);
+    if(dot) dot.classList.toggle('show',allDone);
+  });
+}
+
+function renderWeekTabs(){
+  const container=document.getElementById('weekTabs');
+  const ph=phases[currentPhase];
+  container.innerHTML=ph.weeks.map(w=>{
+    const pct=getWeekCompletion(w);
+    const isDone=pct===100;
+    return `<button class="week-tab ${w===currentWeek?'active':''} ${isDone?'week-done':''}" onclick="selectWeek(${w})">W${w}${pct>0&&!isDone?` <span style="font-size:0.6rem;opacity:0.7">${pct}%</span>`:''}</button>`;
+  }).join('');
+}
+
+function renderOverall(){
+  const pct=getOverallCompletion();
+  document.getElementById('overallFill').style.width=pct+'%';
+  document.getElementById('overallPct').textContent=pct+'%';
+}
+
+function renderWeekSummary(week){
+  const pct=getWeekCompletion(week);
+  const fill=document.getElementById('wsFill');
+  const pctEl=document.getElementById('wsPct');
+  const badge=document.getElementById('wsDoneBadge');
+  if(fill) fill.style.width=pct+'%';
+  if(pctEl) pctEl.textContent=pct+'%';
+  if(badge) badge.style.display=pct===100?'block':'none';
+}
+
+function renderDayProgress(week,dayIdx,dayData){
+  const {pct,done}=getDayCompletion(week,dayIdx,dayData);
+  const wrap=document.getElementById(`dp-wrap-${dayIdx}`);
+  if(!wrap)return;
+  const r=11, circ=2*Math.PI*r;
+  const offset=circ-(pct/100*circ);
+  wrap.querySelector('.dp-fill').setAttribute('stroke-dashoffset',offset);
+  wrap.querySelector('.dp-fill').setAttribute('stroke-dasharray',circ);
+  const color=done?'var(--done-color)':pct>0?'var(--accent)':'var(--border)';
+  wrap.querySelector('.dp-fill').setAttribute('stroke',color);
+  wrap.querySelector('.dp-check').textContent=done?'✓':pct>0?'':'';
+  wrap.querySelector('.dp-check').style.color=done?'var(--done-color)':'var(--accent)';
+  wrap.classList.toggle('complete',done);
+
+  const card=document.getElementById(`day-card-${dayIdx}`);
+  if(card) card.classList.toggle('day-complete',done);
+}
+
+function renderExTable(exercises, week, dayIdx, prefix){
+  const state=(weekData[week]||{})[dayIdx]||{};
+  return `<table class="ex-table">
+    <thead><tr>
+      <th></th><th>Exercise</th><th>Sets</th><th>Reps</th><th>Rest</th>
+    </tr></thead>
+    <tbody>
+      ${exercises.map(ex=>{
+        const checked=!!(state.exercises&&state.exercises[ex.id]);
+        return `<tr class="${checked?'ex-done':''}" id="tr-${prefix}-${ex.id}">
+          <td><input type="checkbox" class="ex-check" ${checked?'checked':''} onchange="toggleEx(${week},${dayIdx},'${ex.id}',this.checked,'${prefix}')"></td>
+          <td><div class="ex-name">${ex.name}</div>${ex.note?`<div class="ex-note">${ex.note}</div>`:''}</td>
+          <td><span class="ex-sets">${ex.sets!==null?ex.sets:'—'}</span></td>
+          <td><span class="ex-reps">${ex.reps}</span></td>
+          <td><span class="ex-rest">${ex.rest||'—'}</span></td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>`;
+}
+
+function renderDay(d, idx, week){
+  const {pct,done}=getDayCompletion(week,idx,d);
+  const r=11,circ=2*Math.PI*r,offset=circ-(pct/100*circ);
+  const color=done?'var(--done-color)':pct>0?'var(--accent)':'var(--border)';
+  const state=(weekData[week]||{})[idx]||{};
+
+  const progressRing=`
+    <div class="day-progress-wrap ${done?'complete':''}" id="dp-wrap-${idx}">
+      <svg width="28" height="28" viewBox="0 0 28 28">
+        <circle class="dp-bg" cx="14" cy="14" r="${r}"/>
+        <circle class="dp-fill" cx="14" cy="14" r="${r}"
+          stroke="${color}" stroke-dasharray="${circ}" stroke-dashoffset="${offset}"/>
+      </svg>
+      <span class="dp-check" style="color:${done?'var(--done-color)':'var(--accent)'}">${done?'✓':pct>0?'':''}</span>
+    </div>`;
+
+  let body='';
+  if(d.isRest){
+    const rdone=state.restDone||false;
+    body=`<div class="rest-content">
+      <p>This is your recovery day. The work is done — let your body adapt.</p>
+      <ul class="rest-list">
+        <li>Sleep 7–9 hours</li>
+        <li>10–15 min light walk or mobility</li>
+        <li>Foam roll quads, hamstrings, lats</li>
+        <li>Eat at a slight deficit — plenty of protein</li>
+        <li>Hydrate. Coffee counts. Beer doesn't.</li>
+      </ul>
+      <button class="mark-done-btn mark-rest-done ${rdone?'done':''}" onclick="markRestDone(${week},${idx},this)">${rdone?'✓ Rest Day Complete':'Mark Rest Day Complete'}</button>
+    </div>`;
+  } else if(d.type==='run'&&d.runData){
+    const rdone=state.runDone||false;
+    body=`
+      <div class="phase-label">Today's Run</div>
+      <div class="run-block">
+        <div class="run-block-title">${d.runData.title}</div>
+        <p>${d.runData.desc}</p>
+        <p class="pace-note">${d.runData.paceNote}</p>
+      </div>
+      <div class="run-log">
+        <div class="run-log-title">Log This Run</div>
+        <div class="run-inputs">
+          <div class="run-field">
+            <label>Distance (km)</label>
+            <input type="number" step="0.1" class="${rdone?'saved':''}" id="run-km-${idx}" value="${state.runKm||''}" placeholder="0.0" onchange="saveRunField(${week},${idx},'runKm',this.value)">
+          </div>
+          <div class="run-field">
+            <label>Time (mm:ss)</label>
+            <input type="text" class="${rdone?'saved':''}" id="run-time-${idx}" value="${state.runTime||''}" placeholder="00:00" onchange="saveRunField(${week},${idx},'runTime',this.value)">
+          </div>
+          <button class="mark-done-btn mark-run-done ${rdone?'done':''}" onclick="markRunDone(${week},${idx},this)">${rdone?'✓ Done':'Mark Complete'}</button>
+        </div>
+      </div>
+      <div class="phase-label" style="margin-top:14px">After Run</div>
+      <ul class="rest-list" style="padding:0">
+        <li>5 min walking cool-down</li>
+        <li>Hip flexor stretch: 60s each side</li>
+        <li>Calf stretch on wall: 30s each</li>
+        <li>Hamstring stretch: 30s each</li>
+      </ul>`;
+  } else if(d.type==='lift'&&d.lift){
+    body=`
+      <div class="phase-label">Warm-Up (~5 min)</div>
+      ${renderExTable(warmup_general,week,idx,'wu')}
+      <div class="phase-label">Main Workout — ${d.lift.name}</div>
+      ${renderExTable(d.lift.exercises,week,idx,'main')}
+      <div class="phase-label">Cool-Down (~5 min)</div>
+      ${renderExTable(cooldown_general,week,idx,'cd')}`;
+  }
+
+  body+=`
+    <div class="notes-section">
+      <div class="notes-label">Session Notes</div>
+      <textarea class="notes-textarea" id="notes-${idx}" placeholder="How'd it go? Weight used, how you felt, anything to remember..."
+        onchange="saveNotes(${week},${idx},this.value)">${state.notes||''}</textarea>
+      <button class="notes-save-btn" id="notes-save-${idx}" onclick="saveNotesFinal(${week},${idx})">Save Notes</button>
+    </div>`;
+
+  return `
+    <div class="day-card ${d.cardClass} ${done?'day-complete':''}" id="day-card-${idx}">
+      <div class="day-header" onclick="toggleDay(${idx})">
+        <div class="day-left">
+          <span class="day-label">${d.day}</span>
+          <span class="day-name">${d.name}</span>
+          <span class="day-type-badge ${d.badge}">${d.badgeText}</span>
+        </div>
+        <div class="day-right">
+          ${progressRing}
+          <span class="chevron">▾</span>
+        </div>
+      </div>
+      <div class="day-body">${body}</div>
+    </div>`;
+}
+
+async function renderCurrentWeek(){
+  await loadWeekData(currentWeek);
+  const ph=phases[currentPhase];
+  const days=buildWeek(currentWeek);
+  const weekInPhase=currentWeek-ph.weeks[0]+1;
+  const focuses={
+    1:["Find your rhythm. Don't kill yourself.","Bigger loads. Keep form tight.","Stay consistent — this is where most quit.","Deload: lighter, easier. Earn next phase."],
+    2:["Upper/Lower split begins. Feel the difference.","More volume, more intensity.","Peak of Phase 2. Push the tempo run.","Back off. Recover. Phase 3 demands everything."],
+    3:["Heavy days start now.","Max effort week. Leave nothing.","Final peak week. This is what you built for.","Deload. You earned this. Look back at Week 1."]
+  };
+  const weekPct=getWeekCompletion(currentWeek);
+  const html=`
+    <div class="week-header">
+      <div class="week-title">Week ${currentWeek}</div>
+      <div class="week-focus">Phase ${currentPhase}: <span>${ph.name}</span> — ${focuses[currentPhase][weekInPhase-1]}</div>
+    </div>
+    <div class="phase-banner">
+      <div class="phase-banner-title">${ph.name}</div>
+      <div class="phase-banner-desc">${ph.desc}</div>
+    </div>
+    <div class="week-summary">
+      <span class="ws-label">Week ${currentWeek} Progress</span>
+      <div class="ws-track"><div class="ws-fill" id="wsFill" style="width:${weekPct}%"></div></div>
+      <span class="ws-pct" id="wsPct">${weekPct}%</span>
+      <span class="ws-done-badge" id="wsDoneBadge" style="display:${weekPct===100?'block':'none'}">Week Complete ✓</span>
+    </div>
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-val">3</div><div class="stat-label">Lift Days</div></div>
+      <div class="stat-box"><div class="stat-val">3</div><div class="stat-label">Run Days</div></div>
+      <div class="stat-box"><div class="stat-val">1</div><div class="stat-label">Rest Day</div></div>
+      <div class="stat-box"><div class="stat-val">5:30</div><div class="stat-label">AM Start</div></div>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--lift-color)"></div>Lift</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--run-color)"></div>Run</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--done-color)"></div>Done</div>
+    </div>
+    <div class="days-grid">
+      ${days.map((d,i)=>renderDay(d,i,currentWeek)).join('')}
+    </div>`;
+  document.getElementById('mainContent').innerHTML=html;
+  renderOverall();
+  renderPhaseTabs();
+  renderWeekTabs();
+}
+
+// ==========================================
+// INTERACTION HANDLERS
+// ==========================================
+function toggleDay(idx){
+  document.getElementById(`day-card-${idx}`).classList.toggle('open');
+}
+
+async function toggleEx(week,dayIdx,exId,checked,prefix){
+  if(!weekData[week])weekData[week]={};
+  if(!weekData[week][dayIdx])weekData[week][dayIdx]={exercises:{},runDone:false,runKm:'',runTime:'',notes:'',restDone:false};
+  weekData[week][dayIdx].exercises[exId]=checked;
+  await saveDay(week,dayIdx);
+  const row=document.getElementById(`tr-${prefix}-${exId}`);
+  if(row)row.classList.toggle('ex-done',checked);
+  const days=buildWeek(week);
+  renderDayProgress(week,dayIdx,days[dayIdx]);
+  renderWeekSummary(week);
+  renderWeekTabs();
+  renderOverall();
+  renderPhaseTabs();
+}
+
+async function markRunDone(week,dayIdx,btn){
+  if(!weekData[week])weekData[week]={};
+  if(!weekData[week][dayIdx])weekData[week][dayIdx]={exercises:{},runDone:false,runKm:'',runTime:'',notes:'',restDone:false};
+  const newState=!weekData[week][dayIdx].runDone;
+  weekData[week][dayIdx].runDone=newState;
+  btn.classList.toggle('done',newState);
+  btn.textContent=newState?'✓ Done':'Mark Complete';
+  const kmInput=document.getElementById(`run-km-${dayIdx}`);
+  const timeInput=document.getElementById(`run-time-${dayIdx}`);
+  if(kmInput)kmInput.classList.toggle('saved',newState);
+  if(timeInput)timeInput.classList.toggle('saved',newState);
+  await saveDay(week,dayIdx);
+  const days=buildWeek(week);
+  renderDayProgress(week,dayIdx,days[dayIdx]);
+  renderWeekSummary(week);
+  renderWeekTabs();
+  renderOverall();
+  renderPhaseTabs();
+}
+
+async function saveRunField(week,dayIdx,field,val){
+  if(!weekData[week])weekData[week]={};
+  if(!weekData[week][dayIdx])weekData[week][dayIdx]={exercises:{},runDone:false,runKm:'',runTime:'',notes:'',restDone:false};
+  weekData[week][dayIdx][field]=val;
+  await saveDay(week,dayIdx);
+}
+
+async function markRestDone(week,dayIdx,btn){
+  if(!weekData[week])weekData[week]={};
+  if(!weekData[week][dayIdx])weekData[week][dayIdx]={exercises:{},runDone:false,runKm:'',runTime:'',notes:'',restDone:false};
+  const newState=!weekData[week][dayIdx].restDone;
+  weekData[week][dayIdx].restDone=newState;
+  btn.classList.toggle('done',newState);
+  btn.textContent=newState?'✓ Rest Day Complete':'Mark Rest Day Complete';
+  await saveDay(week,dayIdx);
+  const days=buildWeek(week);
+  renderDayProgress(week,dayIdx,days[dayIdx]);
+  renderWeekSummary(week);
+  renderWeekTabs();
+  renderOverall();
+  renderPhaseTabs();
+}
+
+async function saveNotes(week,dayIdx,val){
+  if(!weekData[week])weekData[week]={};
+  if(!weekData[week][dayIdx])weekData[week][dayIdx]={exercises:{},runDone:false,runKm:'',runTime:'',notes:'',restDone:false};
+  weekData[week][dayIdx].notes=val;
+}
+
+async function saveNotesFinal(week,dayIdx){
+  await saveDay(week,dayIdx);
+  const btn=document.getElementById(`notes-save-${dayIdx}`);
+  if(btn){btn.textContent='Saved ✓';btn.classList.add('saved');setTimeout(()=>{btn.textContent='Save Notes';btn.classList.remove('saved');},2000);}
+}
+
+// ==========================================
+// INIT — preload all week completion data
+// ==========================================
+async function init(){
+  // Load all weeks silently so completion bars are accurate
+  for(let w=1;w<=12;w++){
+    await loadWeekData(w);
+  }
+  renderPhaseTabs();
+  renderWeekTabs();
+  renderCurrentWeek();
+}
+
+init();
+
+// ==========================================
+// SERVICE WORKER — offline support
+// ==========================================
+if ('serviceWorker' in navigator) {
+  const swCode = `
+    const CACHE = 'hybrid-training-v1';
+    self.addEventListener('install', e => { self.skipWaiting(); });
+    self.addEventListener('activate', e => {
+      e.waitUntil(caches.keys().then(keys =>
+        Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+      ));
+      self.clients.claim();
+    });
+    self.addEventListener('fetch', e => {
+      e.respondWith(
+        caches.match(e.request).then(cached => {
+          if (cached) return cached;
+          return fetch(e.request).then(resp => {
+            if (e.request.url.includes('fonts.g')) {
+              const clone = resp.clone();
+              caches.open(CACHE).then(c => c.put(e.request, clone));
+            }
+            return resp;
+          }).catch(() => cached);
+        })
+      );
+    });
+  `;
+  const blob = new Blob([swCode], {type: 'application/javascript'});
+  const swURL = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swURL).catch(() => {});
+}
+</script>
+</body>
+</html>
+
