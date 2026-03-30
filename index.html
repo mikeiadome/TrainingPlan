@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -6,6 +7,7 @@
 <title>Hybrid Training</title>
 
 <!-- PWA Meta -->
+
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Training">
@@ -14,9 +16,11 @@
 <meta name="description" content="12-Week Hybrid Training Plan — Lift + Run + Track">
 
 <!-- PWA Manifest (inline via data URI) -->
+
 <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%2212-Week%20Hybrid%20Training%22%2C%22short_name%22%3A%22Training%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230a0a0a%22%2C%22theme_color%22%3A%22%230a0a0a%22%2C%22orientation%22%3A%22portrait%22%7D">
 
 <!-- Apple Touch Icons (inline SVG → base64 PNG via canvas, injected by JS below) -->
+
 <link rel="apple-touch-icon" id="apple-icon" href="">
 
 <script>
@@ -91,6 +95,7 @@
     padding-top: max(16px, calc(env(safe-area-inset-top) + 10px)) !important;
   }
 </style>
+
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap');
 
@@ -271,6 +276,42 @@
   }
   .ex-check:hover:not(:checked) { border-color: var(--accent); }
 
+  /* WEIGHT TRACKING */
+  .weight-row {
+    display: none; background: #141414; border-top: 1px solid var(--border);
+  }
+  .weight-row.open { display: table-row; }
+  .weight-row td { padding: 8px 6px 10px; }
+  .weight-row-inner { display: flex; flex-direction: column; gap: 6px; }
+  .weight-sets-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .weight-set-label { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
+  .set-input-group { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .set-num { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .weight-input {
+    width: 58px; background: var(--card); border: 1px solid var(--border);
+    border-radius: 2px; color: var(--accent); font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1rem; font-weight: 700; padding: 4px 6px; outline: none; text-align: center;
+  }
+  .weight-input:focus { border-color: var(--accent); }
+  .weight-input.has-value { border-color: #333; color: var(--accent); }
+  .weight-input::placeholder { color: #333; font-size: 0.8rem; }
+  .weight-unit { font-size: 0.6rem; color: var(--muted); }
+  .weight-log-btn {
+    font-size: 0.6rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 3px 8px; border: 1px solid var(--border); background: transparent;
+    color: var(--muted); cursor: pointer; border-radius: 2px; transition: all 0.15s; margin-top: 2px;
+  }
+  .weight-log-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .weight-log-btn.saved { border-color: var(--done-color); color: var(--done-color); }
+  .ex-weight-preview {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 0.75rem; font-weight: 700;
+    color: var(--accent); margin-top: 1px; opacity: 0.8;
+  }
+  /* tap to expand indicator */
+  .ex-expand-hint {
+    font-size: 0.6rem; color: var(--muted); margin-top: 1px; letter-spacing: 0.05em;
+  }
+
   /* RUN COMPLETE SECTION */
   .run-block {
     background: rgba(58,232,255,0.05); border: 1px solid rgba(58,232,255,0.15);
@@ -350,6 +391,7 @@
   .legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
   .legend-dot { width: 7px; height: 7px; border-radius: 50%; }
 </style>
+
 </head>
 <body>
 
@@ -593,7 +635,7 @@ async function loadWeekData(week){
   for(let d=0;d<7;d++){
     if(!weekData[week][d]){
       const saved = await STORE.get(storeKey(week,d));
-      weekData[week][d] = saved || {exercises:{},runDone:false,runKm:'',runTime:'',notes:'',restDone:false};
+      weekData[week][d] = saved || {exercises:{},weights:{},runDone:false,runKm:'',runTime:'',notes:'',restDone:false};
     }
   }
 }
@@ -710,6 +752,8 @@ function renderDayProgress(week,dayIdx,dayData){
 
 function renderExTable(exercises, week, dayIdx, prefix){
   const state=(weekData[week]||{})[dayIdx]||{};
+  const isMainLift = prefix === 'main';
+
   return `<table class="ex-table">
     <thead><tr>
       <th></th><th>Exercise</th><th>Sets</th><th>Reps</th><th>Rest</th>
@@ -717,13 +761,49 @@ function renderExTable(exercises, week, dayIdx, prefix){
     <tbody>
       ${exercises.map(ex=>{
         const checked=!!(state.exercises&&state.exercises[ex.id]);
-        return `<tr class="${checked?'ex-done':''}" id="tr-${prefix}-${ex.id}">
+        const weights=(state.weights&&state.weights[ex.id])||{};
+        const numSets=ex.sets||3;
+        // Build weight preview string
+        const wVals=Object.values(weights).filter(v=>v&&v!=='');
+        const wPreview=wVals.length>0?wVals.map(v=>v+'lb').join(' / '):'';
+
+        // Only show weight tracking for main exercises with sets
+        const showWeight = isMainLift && ex.sets !== null;
+
+        const mainRow=`<tr class="${checked?'ex-done':''}" id="tr-${prefix}-${ex.id}">
           <td><input type="checkbox" class="ex-check" ${checked?'checked':''} onchange="toggleEx(${week},${dayIdx},'${ex.id}',this.checked,'${prefix}')"></td>
-          <td><div class="ex-name">${ex.name}</div>${ex.note?`<div class="ex-note">${ex.note}</div>`:''}</td>
+          <td ${showWeight?`style="cursor:pointer" onclick="toggleWeightRow('${prefix}-${ex.id}')"`:''}>
+            <div class="ex-name">${ex.name}</div>
+            ${ex.note?`<div class="ex-note">${ex.note}</div>`:''}
+            ${showWeight&&wPreview?`<div class="ex-weight-preview">${wPreview}</div>`:''}
+            ${showWeight?`<div class="ex-expand-hint">tap to log weights ▾</div>`:''}
+          </td>
           <td><span class="ex-sets">${ex.sets!==null?ex.sets:'—'}</span></td>
           <td><span class="ex-reps">${ex.reps}</span></td>
           <td><span class="ex-rest">${ex.rest||'—'}</span></td>
         </tr>`;
+
+        const weightRow = showWeight ? `<tr class="weight-row" id="wr-${prefix}-${ex.id}">
+          <td colspan="5">
+            <div class="weight-row-inner">
+              <div class="weight-set-label">Weight Used (lbs)</div>
+              <div class="weight-sets-row">
+                ${Array.from({length:numSets},(_,i)=>`
+                  <div class="set-input-group">
+                    <span class="set-num">Set ${i+1}</span>
+                    <input type="number" class="weight-input ${weights[i]?'has-value':''}"
+                      id="wi-${prefix}-${ex.id}-${i}"
+                      value="${weights[i]||''}" placeholder="—"
+                      onchange="saveWeight(${week},${dayIdx},'${ex.id}',${i},this.value,'${prefix}')">
+                    <span class="weight-unit">lb</span>
+                  </div>`).join('')}
+                <button class="weight-log-btn" onclick="saveWeightFinal(${week},${dayIdx},'${ex.id}','${prefix}',this)">Save</button>
+              </div>
+            </div>
+          </td>
+        </tr>` : '';
+
+        return mainRow + weightRow;
       }).join('')}
     </tbody>
   </table>`;
@@ -804,160 +884,156 @@ function renderDay(d, idx, week){
       <div class="notes-label">Session Notes</div>
       <textarea class="notes-textarea" id="notes-${idx}" placeholder="How'd it go? Weight used, how you felt, anything to remember..."
         onchange="saveNotes(${week},${idx},this.value)">${state.notes||''}</textarea>
-      <button class="notes-save-btn" id="notes-save-${idx}" onclick="saveNotesFinal(${week},${idx})">Save Notes</button>
-    </div>`;
 
-  return `
-    <div class="day-card ${d.cardClass} ${done?'day-complete':''}" id="day-card-${idx}">
-      <div class="day-header" onclick="toggleDay(${idx})">
-        <div class="day-left">
-          <span class="day-label">${d.day}</span>
-          <span class="day-name">${d.name}</span>
-          <span class="day-type-badge ${d.badge}">${d.badgeText}</span>
-        </div>
-        <div class="day-right">
-          ${progressRing}
-          <span class="chevron">▾</span>
-        </div>
-      </div>
-      <div class="day-body">${body}</div>
-    </div>`;
+```
+  <button class="notes-save-btn" id="notes-save-${idx}" onclick="saveNotesFinal(${week},${idx})">Save Notes</button>
+</div>`;
+```
+
+return ` <div class="day-card ${d.cardClass} ${done?'day-complete':''}" id="day-card-${idx}"> <div class="day-header" onclick="toggleDay(${idx})"> <div class="day-left"> <span class="day-label">${d.day}</span> <span class="day-name">${d.name}</span> <span class="day-type-badge ${d.badge}">${d.badgeText}</span> </div> <div class="day-right"> ${progressRing} <span class="chevron">▾</span> </div> </div> <div class="day-body">${body}</div> </div>`;
 }
 
 async function renderCurrentWeek(){
-  await loadWeekData(currentWeek);
-  const ph=phases[currentPhase];
-  const days=buildWeek(currentWeek);
-  const weekInPhase=currentWeek-ph.weeks[0]+1;
-  const focuses={
-    1:["Find your rhythm. Don't kill yourself.","Bigger loads. Keep form tight.","Stay consistent — this is where most quit.","Deload: lighter, easier. Earn next phase."],
-    2:["Upper/Lower split begins. Feel the difference.","More volume, more intensity.","Peak of Phase 2. Push the tempo run.","Back off. Recover. Phase 3 demands everything."],
-    3:["Heavy days start now.","Max effort week. Leave nothing.","Final peak week. This is what you built for.","Deload. You earned this. Look back at Week 1."]
-  };
-  const weekPct=getWeekCompletion(currentWeek);
-  const html=`
-    <div class="week-header">
-      <div class="week-title">Week ${currentWeek}</div>
-      <div class="week-focus">Phase ${currentPhase}: <span>${ph.name}</span> — ${focuses[currentPhase][weekInPhase-1]}</div>
-    </div>
-    <div class="phase-banner">
-      <div class="phase-banner-title">${ph.name}</div>
-      <div class="phase-banner-desc">${ph.desc}</div>
-    </div>
-    <div class="week-summary">
-      <span class="ws-label">Week ${currentWeek} Progress</span>
-      <div class="ws-track"><div class="ws-fill" id="wsFill" style="width:${weekPct}%"></div></div>
-      <span class="ws-pct" id="wsPct">${weekPct}%</span>
-      <span class="ws-done-badge" id="wsDoneBadge" style="display:${weekPct===100?'block':'none'}">Week Complete ✓</span>
-    </div>
-    <div class="stats-row">
-      <div class="stat-box"><div class="stat-val">3</div><div class="stat-label">Lift Days</div></div>
-      <div class="stat-box"><div class="stat-val">3</div><div class="stat-label">Run Days</div></div>
-      <div class="stat-box"><div class="stat-val">1</div><div class="stat-label">Rest Day</div></div>
-      <div class="stat-box"><div class="stat-val">5:30</div><div class="stat-label">AM Start</div></div>
-    </div>
-    <div class="legend">
-      <div class="legend-item"><div class="legend-dot" style="background:var(--lift-color)"></div>Lift</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--run-color)"></div>Run</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--done-color)"></div>Done</div>
-    </div>
-    <div class="days-grid">
-      ${days.map((d,i)=>renderDay(d,i,currentWeek)).join('')}
-    </div>`;
-  document.getElementById('mainContent').innerHTML=html;
-  renderOverall();
-  renderPhaseTabs();
-  renderWeekTabs();
+await loadWeekData(currentWeek);
+const ph=phases[currentPhase];
+const days=buildWeek(currentWeek);
+const weekInPhase=currentWeek-ph.weeks[0]+1;
+const focuses={
+1:[“Find your rhythm. Don’t kill yourself.”,“Bigger loads. Keep form tight.”,“Stay consistent — this is where most quit.”,“Deload: lighter, easier. Earn next phase.”],
+2:[“Upper/Lower split begins. Feel the difference.”,“More volume, more intensity.”,“Peak of Phase 2. Push the tempo run.”,“Back off. Recover. Phase 3 demands everything.”],
+3:[“Heavy days start now.”,“Max effort week. Leave nothing.”,“Final peak week. This is what you built for.”,“Deload. You earned this. Look back at Week 1.”]
+};
+const weekPct=getWeekCompletion(currentWeek);
+const html=` <div class="week-header"> <div class="week-title">Week ${currentWeek}</div> <div class="week-focus">Phase ${currentPhase}: <span>${ph.name}</span> — ${focuses[currentPhase][weekInPhase-1]}</div> </div> <div class="phase-banner"> <div class="phase-banner-title">${ph.name}</div> <div class="phase-banner-desc">${ph.desc}</div> </div> <div class="week-summary"> <span class="ws-label">Week ${currentWeek} Progress</span> <div class="ws-track"><div class="ws-fill" id="wsFill" style="width:${weekPct}%"></div></div> <span class="ws-pct" id="wsPct">${weekPct}%</span> <span class="ws-done-badge" id="wsDoneBadge" style="display:${weekPct===100?'block':'none'}">Week Complete ✓</span> </div> <div class="stats-row"> <div class="stat-box"><div class="stat-val">3</div><div class="stat-label">Lift Days</div></div> <div class="stat-box"><div class="stat-val">3</div><div class="stat-label">Run Days</div></div> <div class="stat-box"><div class="stat-val">1</div><div class="stat-label">Rest Day</div></div> <div class="stat-box"><div class="stat-val">5:30</div><div class="stat-label">AM Start</div></div> </div> <div class="legend"> <div class="legend-item"><div class="legend-dot" style="background:var(--lift-color)"></div>Lift</div> <div class="legend-item"><div class="legend-dot" style="background:var(--run-color)"></div>Run</div> <div class="legend-item"><div class="legend-dot" style="background:var(--done-color)"></div>Done</div> </div> <div class="days-grid"> ${days.map((d,i)=>renderDay(d,i,currentWeek)).join('')} </div>`;
+document.getElementById(‘mainContent’).innerHTML=html;
+renderOverall();
+renderPhaseTabs();
+renderWeekTabs();
 }
 
 // ==========================================
 // INTERACTION HANDLERS
 // ==========================================
 function toggleDay(idx){
-  document.getElementById(`day-card-${idx}`).classList.toggle('open');
+document.getElementById(`day-card-${idx}`).classList.toggle(‘open’);
 }
 
 async function toggleEx(week,dayIdx,exId,checked,prefix){
-  if(!weekData[week])weekData[week]={};
-  if(!weekData[week][dayIdx])weekData[week][dayIdx]={exercises:{},runDone:false,runKm:'',runTime:'',notes:'',restDone:false};
-  weekData[week][dayIdx].exercises[exId]=checked;
-  await saveDay(week,dayIdx);
-  const row=document.getElementById(`tr-${prefix}-${exId}`);
-  if(row)row.classList.toggle('ex-done',checked);
-  const days=buildWeek(week);
-  renderDayProgress(week,dayIdx,days[dayIdx]);
-  renderWeekSummary(week);
-  renderWeekTabs();
-  renderOverall();
-  renderPhaseTabs();
+if(!weekData[week])weekData[week]={};
+if(!weekData[week][dayIdx])weekData[week][dayIdx]={exercises:{},runDone:false,runKm:’’,runTime:’’,notes:’’,restDone:false};
+weekData[week][dayIdx].exercises[exId]=checked;
+await saveDay(week,dayIdx);
+const row=document.getElementById(`tr-${prefix}-${exId}`);
+if(row)row.classList.toggle(‘ex-done’,checked);
+const days=buildWeek(week);
+renderDayProgress(week,dayIdx,days[dayIdx]);
+renderWeekSummary(week);
+renderWeekTabs();
+renderOverall();
+renderPhaseTabs();
 }
 
 async function markRunDone(week,dayIdx,btn){
-  if(!weekData[week])weekData[week]={};
-  if(!weekData[week][dayIdx])weekData[week][dayIdx]={exercises:{},runDone:false,runKm:'',runTime:'',notes:'',restDone:false};
-  const newState=!weekData[week][dayIdx].runDone;
-  weekData[week][dayIdx].runDone=newState;
-  btn.classList.toggle('done',newState);
-  btn.textContent=newState?'✓ Done':'Mark Complete';
-  const kmInput=document.getElementById(`run-km-${dayIdx}`);
-  const timeInput=document.getElementById(`run-time-${dayIdx}`);
-  if(kmInput)kmInput.classList.toggle('saved',newState);
-  if(timeInput)timeInput.classList.toggle('saved',newState);
-  await saveDay(week,dayIdx);
-  const days=buildWeek(week);
-  renderDayProgress(week,dayIdx,days[dayIdx]);
-  renderWeekSummary(week);
-  renderWeekTabs();
-  renderOverall();
-  renderPhaseTabs();
+if(!weekData[week])weekData[week]={};
+if(!weekData[week][dayIdx])weekData[week][dayIdx]={exercises:{},runDone:false,runKm:’’,runTime:’’,notes:’’,restDone:false};
+const newState=!weekData[week][dayIdx].runDone;
+weekData[week][dayIdx].runDone=newState;
+btn.classList.toggle(‘done’,newState);
+btn.textContent=newState?‘✓ Done’:‘Mark Complete’;
+const kmInput=document.getElementById(`run-km-${dayIdx}`);
+const timeInput=document.getElementById(`run-time-${dayIdx}`);
+if(kmInput)kmInput.classList.toggle(‘saved’,newState);
+if(timeInput)timeInput.classList.toggle(‘saved’,newState);
+await saveDay(week,dayIdx);
+const days=buildWeek(week);
+renderDayProgress(week,dayIdx,days[dayIdx]);
+renderWeekSummary(week);
+renderWeekTabs();
+renderOverall();
+renderPhaseTabs();
 }
 
 async function saveRunField(week,dayIdx,field,val){
-  if(!weekData[week])weekData[week]={};
-  if(!weekData[week][dayIdx])weekData[week][dayIdx]={exercises:{},runDone:false,runKm:'',runTime:'',notes:'',restDone:false};
-  weekData[week][dayIdx][field]=val;
-  await saveDay(week,dayIdx);
+if(!weekData[week])weekData[week]={};
+if(!weekData[week][dayIdx])weekData[week][dayIdx]={exercises:{},runDone:false,runKm:’’,runTime:’’,notes:’’,restDone:false};
+weekData[week][dayIdx][field]=val;
+await saveDay(week,dayIdx);
 }
 
 async function markRestDone(week,dayIdx,btn){
-  if(!weekData[week])weekData[week]={};
-  if(!weekData[week][dayIdx])weekData[week][dayIdx]={exercises:{},runDone:false,runKm:'',runTime:'',notes:'',restDone:false};
-  const newState=!weekData[week][dayIdx].restDone;
-  weekData[week][dayIdx].restDone=newState;
-  btn.classList.toggle('done',newState);
-  btn.textContent=newState?'✓ Rest Day Complete':'Mark Rest Day Complete';
-  await saveDay(week,dayIdx);
-  const days=buildWeek(week);
-  renderDayProgress(week,dayIdx,days[dayIdx]);
-  renderWeekSummary(week);
-  renderWeekTabs();
-  renderOverall();
-  renderPhaseTabs();
+if(!weekData[week])weekData[week]={};
+if(!weekData[week][dayIdx])weekData[week][dayIdx]={exercises:{},runDone:false,runKm:’’,runTime:’’,notes:’’,restDone:false};
+const newState=!weekData[week][dayIdx].restDone;
+weekData[week][dayIdx].restDone=newState;
+btn.classList.toggle(‘done’,newState);
+btn.textContent=newState?‘✓ Rest Day Complete’:‘Mark Rest Day Complete’;
+await saveDay(week,dayIdx);
+const days=buildWeek(week);
+renderDayProgress(week,dayIdx,days[dayIdx]);
+renderWeekSummary(week);
+renderWeekTabs();
+renderOverall();
+renderPhaseTabs();
 }
 
 async function saveNotes(week,dayIdx,val){
-  if(!weekData[week])weekData[week]={};
-  if(!weekData[week][dayIdx])weekData[week][dayIdx]={exercises:{},runDone:false,runKm:'',runTime:'',notes:'',restDone:false};
-  weekData[week][dayIdx].notes=val;
+if(!weekData[week])weekData[week]={};
+if(!weekData[week][dayIdx])weekData[week][dayIdx]={exercises:{},runDone:false,runKm:’’,runTime:’’,notes:’’,restDone:false};
+weekData[week][dayIdx].notes=val;
 }
 
 async function saveNotesFinal(week,dayIdx){
-  await saveDay(week,dayIdx);
-  const btn=document.getElementById(`notes-save-${dayIdx}`);
-  if(btn){btn.textContent='Saved ✓';btn.classList.add('saved');setTimeout(()=>{btn.textContent='Save Notes';btn.classList.remove('saved');},2000);}
+await saveDay(week,dayIdx);
+const btn=document.getElementById(`notes-save-${dayIdx}`);
+if(btn){btn.textContent=‘Saved ✓’;btn.classList.add(‘saved’);setTimeout(()=>{btn.textContent=‘Save Notes’;btn.classList.remove(‘saved’);},2000);}
+}
+
+function toggleWeightRow(id){
+const wr=document.getElementById(`wr-${id}`);
+if(wr) wr.classList.toggle(‘open’);
+}
+
+async function saveWeight(week,dayIdx,exId,setIdx,val,prefix){
+if(!weekData[week])weekData[week]={};
+if(!weekData[week][dayIdx])weekData[week][dayIdx]={exercises:{},weights:{},runDone:false,runKm:’’,runTime:’’,notes:’’,restDone:false};
+if(!weekData[week][dayIdx].weights)weekData[week][dayIdx].weights={};
+if(!weekData[week][dayIdx].weights[exId])weekData[week][dayIdx].weights[exId]={};
+weekData[week][dayIdx].weights[exId][setIdx]=val;
+const input=document.getElementById(`wi-${prefix}-${exId}-${setIdx}`);
+if(input) input.classList.toggle(‘has-value’, val!==’’);
+}
+
+async function saveWeightFinal(week,dayIdx,exId,prefix,btn){
+await saveDay(week,dayIdx);
+// Update preview
+const weights=(weekData[week][dayIdx].weights&&weekData[week][dayIdx].weights[exId])||{};
+const wVals=Object.values(weights).filter(v=>v&&v!==’’);
+const preview=wVals.length>0?wVals.map(v=>v+‘lb’).join(’ / ‘):’’;
+const row=document.getElementById(`tr-${prefix}-${exId}`);
+if(row){
+let prev=row.querySelector(’.ex-weight-preview’);
+if(!prev&&preview){
+prev=document.createElement(‘div’);
+prev.className=‘ex-weight-preview’;
+row.querySelector(‘td:nth-child(2)’).appendChild(prev);
+}
+if(prev) prev.textContent=preview;
+}
+btn.textContent=‘Saved ✓’; btn.classList.add(‘saved’);
+setTimeout(()=>{btn.textContent=‘Save’;btn.classList.remove(‘saved’);},2000);
 }
 
 // ==========================================
 // INIT — preload all week completion data
 // ==========================================
 async function init(){
-  // Load all weeks silently so completion bars are accurate
-  for(let w=1;w<=12;w++){
-    await loadWeekData(w);
-  }
-  renderPhaseTabs();
-  renderWeekTabs();
-  renderCurrentWeek();
+// Load all weeks silently so completion bars are accurate
+for(let w=1;w<=12;w++){
+await loadWeekData(w);
+}
+renderPhaseTabs();
+renderWeekTabs();
+renderCurrentWeek();
 }
 
 init();
@@ -965,36 +1041,13 @@ init();
 // ==========================================
 // SERVICE WORKER — offline support
 // ==========================================
-if ('serviceWorker' in navigator) {
-  const swCode = `
-    const CACHE = 'hybrid-training-v1';
-    self.addEventListener('install', e => { self.skipWaiting(); });
-    self.addEventListener('activate', e => {
-      e.waitUntil(caches.keys().then(keys =>
-        Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-      ));
-      self.clients.claim();
-    });
-    self.addEventListener('fetch', e => {
-      e.respondWith(
-        caches.match(e.request).then(cached => {
-          if (cached) return cached;
-          return fetch(e.request).then(resp => {
-            if (e.request.url.includes('fonts.g')) {
-              const clone = resp.clone();
-              caches.open(CACHE).then(c => c.put(e.request, clone));
-            }
-            return resp;
-          }).catch(() => cached);
-        })
-      );
-    });
-  `;
-  const blob = new Blob([swCode], {type: 'application/javascript'});
-  const swURL = URL.createObjectURL(blob);
-  navigator.serviceWorker.register(swURL).catch(() => {});
+if (‘serviceWorker’ in navigator) {
+const swCode = `const CACHE = 'hybrid-training-v1'; self.addEventListener('install', e => { self.skipWaiting(); }); self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))) )); self.clients.claim(); }); self.addEventListener('fetch', e => { e.respondWith( caches.match(e.request).then(cached => { if (cached) return cached; return fetch(e.request).then(resp => { if (e.request.url.includes('fonts.g')) { const clone = resp.clone(); caches.open(CACHE).then(c => c.put(e.request, clone)); } return resp; }).catch(() => cached); }) ); });`;
+const blob = new Blob([swCode], {type: ‘application/javascript’});
+const swURL = URL.createObjectURL(blob);
+navigator.serviceWorker.register(swURL).catch(() => {});
 }
 </script>
+
 </body>
 </html>
-
