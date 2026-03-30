@@ -426,15 +426,26 @@
 
 <script>
 // ==========================================
-// STORAGE HELPERS
+// STORAGE HELPERS — localStorage for GitHub Pages
 // ==========================================
 const STORE = {
   get: async (key) => {
-    try { const r = await window.storage.get(key); return r ? JSON.parse(r.value) : null; }
+    try {
+      if (window.storage && typeof window.storage.get === 'function') {
+        const r = await window.storage.get(key);
+        return r ? JSON.parse(r.value) : null;
+      }
+    } catch {}
+    try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; }
     catch { return null; }
   },
   set: async (key, val) => {
-    try { await window.storage.set(key, JSON.stringify(val)); } catch {}
+    try {
+      if (window.storage && typeof window.storage.set === 'function') {
+        await window.storage.set(key, JSON.stringify(val)); return;
+      }
+    } catch {}
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
   }
 };
 
