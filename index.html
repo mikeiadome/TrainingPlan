@@ -455,7 +455,7 @@ const STORE = {
 // DATA
 // ==========================================
 const phases = {
-  1: { name:"Foundation & Fat Loss", desc:"Re-establish your aerobic base with easy running. Full-body lifting 3x/week with moderate weight and high effort. Priority: consistency, movement quality, and dropping body fat. Don't push pace on runs — you're building the engine.", weeks:[1,2,3,4] },
+  1: { name:"Foundation & Fat Loss", desc:"Re-establish your aerobic base with easy running. Full-body lifting 3x/week with moderate weight and high effort. Priority: consistency, movement quality, and dropping body fat. Dont push pace on runs — youre building the engine.", weeks:[1,2,3,4] },
   2: { name:"Strength & Threshold", desc:"Split into Upper/Lower lifting to drive more muscle stimulus. Run intensity increases with one threshold or tempo session per week. Volume and load increases across the board. You should be sweating hard most sessions.", weeks:[5,6,7,8] },
   3: { name:"Power & Peak", desc:"Maximum intensity phase. Explosive lifting, heavier loads, and a weekly interval run. This is where you cash in on everything built in Phases 1 and 2. Final week is a deload — lighter weights, shorter runs.", weeks:[9,10,11,12] }
 };
@@ -491,7 +491,7 @@ const p1B={name:"Full Body B — Hinge Focus",type:"lift",duration:"~55 min",exe
   {id:"p1b4",name:"Seated Cable Row",sets:3,reps:"12",rest:"60s"},
   {id:"p1b5",name:"Lateral Raise",sets:3,reps:"15",rest:"45s",note:"Light weight. Control the descent."},
   {id:"p1b6",name:"Hanging Knee Raise",sets:3,reps:"12",rest:"45s"},
-  {id:"p1b7",name:"Farmer's Carry",sets:3,reps:"20m each",rest:"60s",note:"Heavy dumbbells, walk tall."},
+  {id:"p1b7",name:"Farmers Carry",sets:3,reps:"20m each",rest:"60s",note:"Heavy dumbbells, walk tall."},
 ]};
 const p1C={name:"Full Body C — Push/Pull Mix",type:"lift",duration:"~55 min",exercises:[
   {id:"p1c1",name:"Barbell / Dumbbell Hip Thrust",sets:3,reps:"15",rest:"60s",note:"Full extension at top, squeeze glutes."},
@@ -580,9 +580,9 @@ const p3HL={name:"Hypertrophy Lower — High Volume",type:"lift",duration:"~60 m
 function getRun(phase,week,runNum){
   if(phase===1){
     const eKm=[3.5,4,4.5,3][week-1],lKm=[5,6,7,5][week-1];
-    if(runNum===1)return{title:"Easy Run",desc:`${eKm} km at a conversational easy pace. If you can't hold a sentence, slow down. Aerobic base building.`,paceNote:"Target: 6:30–7:30/km. RPE 4–5/10."};
+    if(runNum===1)return{title:"Easy Run",desc:`${eKm} km at a conversational easy pace. If you cant hold a sentence, slow down. Aerobic base building.`,paceNote:"Target: 6:30–7:30/km. RPE 4–5/10."};
     if(runNum===2)return{title:"Easy Run",desc:`${eKm} km easy. Keep it relaxed. Focus on form: tall posture, relaxed shoulders, 170–180 spm cadence.`,paceNote:"Target: 6:30–7:30/km. RPE 4/10."};
-    if(runNum===3)return{title:`Long Easy Run — ${lKm} km`,desc:`${lKm} km easy. Re-base run. Start very slow. The engine is there — you're just waking it up.`,paceNote:"Target: 6:45–7:30/km. RPE 4–5/10."};
+    if(runNum===3)return{title:`Long Easy Run — ${lKm} km`,desc:`${lKm} km easy. Re-base run. Start very slow. The engine is there — youre just waking it up.`,paceNote:"Target: 6:45–7:30/km. RPE 4–5/10."};
   }
   if(phase===2){
     const w=week-4,tKm=[4,5,5,3.5][w-1],eKm=[5,5,6,4][w-1],lKm=[8,9,10,7][w-1];
@@ -846,7 +846,7 @@ function renderDay(d, idx, week){
         <li>10–15 min light walk or mobility</li>
         <li>Foam roll quads, hamstrings, lats</li>
         <li>Eat at a slight deficit — plenty of protein</li>
-        <li>Hydrate. Coffee counts. Beer doesn't.</li>
+        <li>Hydrate. Coffee counts. Beer doesnt.</li>
       </ul>
       <button class="mark-done-btn mark-rest-done ${rdone?'done':''}" onclick="markRestDone(${week},${idx},this)">${rdone?'✓ Rest Day Complete':'Mark Rest Day Complete'}</button>
     </div>`;
@@ -910,7 +910,7 @@ const ph=phases[currentPhase];
 const days=buildWeek(currentWeek);
 const weekInPhase=currentWeek-ph.weeks[0]+1;
 const focuses={
-1:[“Find your rhythm. Don’t kill yourself.”,“Bigger loads. Keep form tight.”,“Stay consistent — this is where most quit.”,“Deload: lighter, easier. Earn next phase.”],
+1:[“Find your rhythm. Dont kill yourself.”,“Bigger loads. Keep form tight.”,“Stay consistent — this is where most quit.”,“Deload: lighter, easier. Earn next phase.”],
 2:[“Upper/Lower split begins. Feel the difference.”,“More volume, more intensity.”,“Peak of Phase 2. Push the tempo run.”,“Back off. Recover. Phase 3 demands everything.”],
 3:[“Heavy days start now.”,“Max effort week. Leave nothing.”,“Final peak week. This is what you built for.”,“Deload. You earned this. Look back at Week 1.”]
 };
@@ -1038,13 +1038,16 @@ setTimeout(()=>{btn.textContent=‘Save’;btn.classList.remove(‘saved’);},2
 // INIT — preload all week completion data
 // ==========================================
 async function init(){
-// Load all weeks silently so completion bars are accurate
+try {
 for(let w=1;w<=12;w++){
 await loadWeekData(w);
 }
 renderPhaseTabs();
 renderWeekTabs();
-renderCurrentWeek();
+await renderCurrentWeek();
+} catch(e) {
+document.getElementById(‘mainContent’).innerHTML = ’<div style="color:#ff4d1c;padding:20px;font-family:monospace;font-size:0.8rem;">ERROR: ’ + e.message + ‘<br>’ + e.stack + ‘</div>’;
+}
 }
 
 init();
